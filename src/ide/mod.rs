@@ -12,9 +12,12 @@ use self::completion::*;
 use self::hover::*;
 use self::lookup::*;
 
+mod backend;
 mod completion;
 mod hover;
 mod lookup;
+
+pub use self::backend::Backend;
 
 struct Analyzer {
     handle: JoinHandle<()>,
