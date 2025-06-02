@@ -1,5 +1,6 @@
 use codespan_reporting::files::{Files, SimpleFile};
-use tower_lsp::lsp_types::{Location, Url};
+use tower_lsp_server::UriExt;
+use tower_lsp_server::lsp_types::{Location, Uri};
 
 use crate::frontend::lexer::Token;
 use crate::frontend::parser::Span;
@@ -47,7 +48,7 @@ pub fn lookup_definition(
     cst: &Cst,
     sema: &SemanticData,
     pos: usize,
-    uri: &Url,
+    uri: &Uri,
     file: &SimpleFile<&str, &str>,
     parser_path: &std::path::Path,
 ) -> Option<Location> {
@@ -95,20 +96,20 @@ fn lookup_parser_impl_definition(
     number: &str,
     parser_path: &std::path::Path,
 ) -> Option<Location> {
-    let uri = Url::from_file_path(parser_path).ok()?;
+    let uri = Uri::from_file_path(parser_path)?;
     let source = std::fs::read_to_string(parser_path).ok()?;
     let file = SimpleFile::new(parser_path.to_str()?, source.as_str());
     source
         .find(&format!("fn {kind}_{rule_name}_{number}"))
         .and_then(|offset| file.location((), offset).ok())
         .map(|loc| {
-            let pos = tower_lsp::lsp_types::Position::new(
+            let pos = tower_lsp_server::lsp_types::Position::new(
                 (loc.line_number - 1) as u32,
                 (loc.column_number - 1) as u32,
             );
             Location {
                 uri,
-                range: tower_lsp::lsp_types::Range::new(pos, pos),
+                range: tower_lsp_server::lsp_types::Range::new(pos, pos),
             }
         })
 }

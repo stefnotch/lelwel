@@ -6,7 +6,7 @@ use codespan_reporting::files::SimpleFile;
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use tower_lsp::lsp_types::*;
+use tower_lsp_server::{UriExt, lsp_types::*};
 
 use self::completion::*;
 use self::hover::*;
@@ -24,11 +24,11 @@ struct Analyzer {
 
 #[derive(Default)]
 pub struct Cache {
-    analyzers: HashMap<Url, Analyzer>,
+    analyzers: HashMap<Uri, Analyzer>,
 }
 
 impl Cache {
-    pub fn analyze(&mut self, uri: &Url, text: String) {
+    pub fn analyze(&mut self, uri: &Uri, text: String) {
         let (req_tx, req_rx) = mpsc::channel::<Request>(32);
         let (noti_tx, noti_rx) = mpsc::channel::<Notification>(32);
         let handle = tokio::spawn(analyze(uri.clone(), text, req_rx, noti_tx));
@@ -42,12 +42,12 @@ impl Cache {
             },
         );
     }
-    pub fn invalidate(&self, uri: &Url) {
+    pub fn invalidate(&self, uri: &Uri) {
         if self.analyzers.contains_key(uri) {
             self.analyzers[uri].handle.abort();
         }
     }
-    pub async fn get_diagnostics(&mut self, uri: &Url) -> Vec<Diagnostic> {
+    pub async fn get_diagnostics(&mut self, uri: &Uri) -> Vec<Diagnostic> {
         let analyzer = self.analyzers.get_mut(uri).unwrap();
         assert!(!analyzer.handle.is_finished());
         analyzer.req_tx.send(Request::Diagnostic).await.unwrap();
@@ -57,7 +57,7 @@ impl Cache {
             vec![]
         }
     }
-    pub async fn hover(&mut self, uri: &Url, pos: Position) -> Option<(String, Range)> {
+    pub async fn hover(&mut self, uri: &Uri, pos: Position) -> Option<(String, Range)> {
         let analyzer = self.analyzers.get_mut(uri).unwrap();
         assert!(!analyzer.handle.is_finished());
         analyzer.req_tx.send(Request::Hover(pos)).await.unwrap();
@@ -67,7 +67,7 @@ impl Cache {
             None
         }
     }
-    pub async fn goto_definition(&mut self, uri: &Url, pos: Position) -> Option<Location> {
+    pub async fn goto_definition(&mut self, uri: &Uri, pos: Position) -> Option<Location> {
         let analyzer = self.analyzers.get_mut(uri).unwrap();
         assert!(!analyzer.handle.is_finished());
         analyzer
@@ -81,7 +81,7 @@ impl Cache {
             None
         }
     }
-    pub async fn references(&mut self, uri: &Url, pos: Position, with_def: bool) -> Vec<Location> {
+    pub async fn references(&mut self, uri: &Uri, pos: Position, with_def: bool) -> Vec<Location> {
         let analyzer = self.analyzers.get_mut(uri).unwrap();
         assert!(!analyzer.handle.is_finished());
         analyzer
@@ -131,7 +131,7 @@ enum Notification {
 }
 
 async fn analyze(
-    uri: Url,
+    uri: Uri,
     source: String,
     mut req: mpsc::Receiver<Request>,
     noti: mpsc::Sender<Notification>,
@@ -194,7 +194,7 @@ async fn analyze(
 fn to_lsp_related(
     file: &SimpleFile<&str, &str>,
     span: &Span,
-    uri: &Url,
+    uri: &Uri,
     msg: &str,
 ) -> DiagnosticRelatedInformation {
     DiagnosticRelatedInformation {
@@ -205,7 +205,7 @@ fn to_lsp_related(
 
 fn to_lsp_diag(
     file: &SimpleFile<&str, &str>,
-    uri: &Url,
+    uri: &Uri,
     diag: &super::frontend::parser::Diagnostic,
 ) -> Diagnostic {
     let related = diag
@@ -233,7 +233,7 @@ fn to_lsp_diag(
     Diagnostic::new(
         diag.labels
             .first()
-            .map_or(tower_lsp::lsp_types::Range::default(), |label| {
+            .map_or(tower_lsp_server::lsp_types::Range::default(), |label| {
                 compat::span_to_range(file, &label.range)
             }),
         Some(match diag.severity {
@@ -275,7 +275,7 @@ mod compat {
 
     pub fn position_to_offset(
         file: &SimpleFile<&str, &str>,
-        pos: &tower_lsp::lsp_types::Position,
+        pos: &tower_lsp_server::lsp_types::Position,
     ) -> usize {
         codespan_lsp::position_to_byte_index(
             file,
@@ -288,11 +288,11 @@ mod compat {
     pub fn span_to_range(
         file: &SimpleFile<&str, &str>,
         span: &Span,
-    ) -> tower_lsp::lsp_types::Range {
+    ) -> tower_lsp_server::lsp_types::Range {
         let range = codespan_lsp::byte_span_to_range(file, (), span.clone()).unwrap();
-        tower_lsp::lsp_types::Range::new(
-            tower_lsp::lsp_types::Position::new(range.start.line, range.start.character),
-            tower_lsp::lsp_types::Position::new(range.end.line, range.end.character),
+        tower_lsp_server::lsp_types::Range::new(
+            tower_lsp_server::lsp_types::Position::new(range.start.line, range.start.character),
+            tower_lsp_server::lsp_types::Position::new(range.end.line, range.end.character),
         )
     }
 }

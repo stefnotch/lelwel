@@ -5,7 +5,7 @@ description = "Resilient LL(1) parser generator"
 repository = "https://github.com/0x2a-42/lelwel"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-edition = "2021"
+edition = "2024"
 keywords = ["parser", "generator", "LL", "grammar"]
 categories = ["parsing"]
 
@@ -13,16 +13,16 @@ categories = ["parsing"]
 logos = "0.15"
 codespan-reporting = "0.11"
 codespan-lsp = { version = "0.11", optional = true }
-tokio = { version = "1.40", features = ["io-std", "macros", "rt", "rt-multi-thread"], optional = true  }
+tokio = { version = "1.45", features = ["io-std", "macros", "rt", "rt-multi-thread"], optional = true  }
 clap = { version = "4.5", features = ["cargo"], optional = true }
 lsp-types = { version = "0.88", optional = true }
-tower-lsp = { version = "0.20", optional = true }
+tower-lsp-server = { version = "0.21", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 
 [features]
-cli = ["clap"]
-lsp = ["tokio", "tower-lsp", "codespan-lsp", "lsp-types"]
-wasm = ["wasm-bindgen"]
+cli = ["dep:clap"]
+lsp = ["dep:tokio", "dep:tower-lsp-server", "dep:codespan-lsp", "dep:lsp-types"]
+wasm = ["dep:wasm-bindgen"]
 
 [[bin]]
 name = "llw"
