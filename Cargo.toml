@@ -13,7 +13,7 @@ categories = ["parsing"]
 logos = "0.15"
 codespan-reporting = "0.11"
 codespan-lsp = { version = "0.11", optional = true }
-tokio = { version = "1.45", features = ["io-std", "macros", "rt", "rt-multi-thread"], optional = true  }
+tokio = { version = "1.45", features = ["macros", "rt"], optional = true  }
 clap = { version = "4.5", features = ["cargo"], optional = true }
 lsp-types = { version = "0.88", optional = true }
 tower-lsp-server = { version = "0.21", optional = true }
@@ -21,7 +21,17 @@ wasm-bindgen = { version = "0.2", optional = true }
 
 [features]
 cli = ["dep:clap"]
-lsp = ["dep:tokio", "dep:tower-lsp-server", "dep:codespan-lsp", "dep:lsp-types"]
+lsp_min = [
+    "dep:tokio", 
+    "dep:tower-lsp-server", 
+    "dep:codespan-lsp", 
+    "dep:lsp-types"
+]
+lsp = [
+    "lsp_min", 
+    "tokio/io-std", 
+    "tokio/rt-multi-thread"
+]
 wasm = ["dep:wasm-bindgen"]
 
 [[bin]]

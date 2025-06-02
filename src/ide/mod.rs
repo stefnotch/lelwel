@@ -1,4 +1,4 @@
-#![cfg(feature = "lsp")]
+#![cfg(feature = "lsp_min")]
 
 use crate::{Parser, SemanticPass, Span};
 use codespan_reporting::diagnostic::{LabelStyle, Severity};
