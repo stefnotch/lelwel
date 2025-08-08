@@ -712,7 +712,7 @@ impl RustOutput {
     fn output_parse_start_rules(
         cst: &Cst<'_>,
         sema: &SemanticData<'_>,
-        output: &mut std::fs::File,
+        output: &mut BufWriter<std::fs::File>,
     ) -> std::io::Result<()> {
         for (i, start_rule) in sema.start_rule.iter().enumerate() {
             let name = start_rule.name(cst).unwrap().0;
